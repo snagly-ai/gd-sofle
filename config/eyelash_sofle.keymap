@@ -26,6 +26,14 @@
 
 &soft_off { hold-time-ms = <2000>; };
 
+// Mod-tap keys on the number row: only become a hold if another key is
+// pressed AND released while held, so fast typing stays as taps
+&mt {
+    flavor = "balanced";
+    tapping-term-ms = <200>;
+    quick-tap-ms = <175>;
+};
+
 / {
     scroll_encoder: scroll_encoder {
         compatible = "zmk,behavior-sensor-rotate";
