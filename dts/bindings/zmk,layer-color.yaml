@@ -1,0 +1,34 @@
+description: |
+  Colours the RGB underglow by the highest active keymap layer.
+  Add one child node per layer you want coloured. Layers without a child
+  use the colour of the next lower active layer.
+
+compatible: "zmk,layer-color"
+
+child-binding:
+  description: Colour for one layer
+
+  properties:
+    layer:
+      type: int
+      required: true
+      description: Layer number, counting from 0 in keymap order.
+
+    hue:
+      type: int
+      required: true
+      description: 0-360. 0 red, 30 orange, 60 yellow, 120 green, 180 cyan, 240 blue, 300 magenta.
+
+    saturation:
+      type: int
+      default: 100
+      description: 0-100. Lower values look paler, 0 is white.
+
+    brightness:
+      type: int
+      description: 0-100. Leave out to keep the brightness you set with the RGB keys.
+
+    effect:
+      type: int
+      default: 0
+      description: 0 solid, 1 breathe, 2 spectrum, 3 swirl (rainbow by column).
