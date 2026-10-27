@@ -1,0 +1,25 @@
+DT_COMPAT_ZMK_LAYER_COLOR := zmk,layer-color
+
+config ZMK_LAYER_COLOR
+    bool "Colour the RGB underglow by active layer"
+    default $(dt_compat_enabled,$(DT_COMPAT_ZMK_LAYER_COLOR))
+    depends on ZMK_RGB_UNDERGLOW
+    depends on !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
+
+if ZMK_LAYER_COLOR
+
+config ZMK_LAYER_COLOR_DEBOUNCE_MS
+    int "Wait this long (ms) after a layer change before changing colour"
+    default 15
+
+config ZMK_LAYER_COLOR_RESYNC_DELAY_MS
+    int "Wait this long (ms) after the halves connect before re-sending the colour"
+    default 3000
+
+endif
+
+DT_COMPAT_ZMK_BEHAVIOR_PC_SCENE := zmk,behavior-pc-scene
+
+config ZMK_PC_SCENE
+    bool "Share the active Bluetooth profile with both halves (screen pictures)"
+    default $(dt_compat_enabled,$(DT_COMPAT_ZMK_BEHAVIOR_PC_SCENE))

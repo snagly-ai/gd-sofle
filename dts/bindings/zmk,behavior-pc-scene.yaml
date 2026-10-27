@@ -1,0 +1,9 @@
+description: |
+  Shares the active Bluetooth profile with both halves of a split keyboard
+  (used by the nice!view screens: night picture on PC one, day on PC two).
+  Invoked automatically by the left half; not meant to be put on a key.
+  Keep the node name to 8 characters or fewer.
+
+compatible: "zmk,behavior-pc-scene"
+
+include: one_param.yaml

@@ -1,0 +1,48 @@
+# Copyright (c) 2023 The ZMK Contributors
+# SPDX-License-Identifier: MIT
+#
+# nice!view with a picture screen: battery + connection status at the top,
+# Etemenanki ziggurat (left half) / Hanging Gardens of Babylon (right half) below.
+
+if SHIELD_NICE_VIEW_BABYLON
+
+config LV_Z_VDB_SIZE
+    default 100
+
+config LV_DPI_DEF
+    default 161
+
+config LV_Z_BITS_PER_PIXEL
+    default 1
+
+choice LV_COLOR_DEPTH
+    default LV_COLOR_DEPTH_1
+endchoice
+
+choice ZMK_DISPLAY_WORK_QUEUE
+    default ZMK_DISPLAY_WORK_QUEUE_DEDICATED
+endchoice
+
+choice ZMK_DISPLAY_STATUS_SCREEN
+    default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+endchoice
+
+config LV_Z_MEM_POOL_SIZE
+    default 4096 if ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+
+config ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+    imply NICE_VIEW_BABYLON_STATUS
+
+config NICE_VIEW_BABYLON_STATUS
+    bool "nice!view picture status screen"
+    select LV_FONT_MONTSERRAT_16
+    select LV_USE_IMG
+    select LV_USE_CANVAS
+
+config NICE_VIEW_BABYLON_INVERTED
+    bool "Invert the screen colours (white on black)"
+
+config ZMK_DISPLAY_STATUS_SCREEN_BUILT_IN
+    select LV_FONT_MONTSERRAT_26
+
+endif # SHIELD_NICE_VIEW_BABYLON
