@@ -17,3 +17,9 @@ config ZMK_LAYER_COLOR_RESYNC_DELAY_MS
     default 3000
 
 endif
+
+DT_COMPAT_ZMK_BEHAVIOR_PC_SCENE := zmk,behavior-pc-scene
+
+config ZMK_PC_SCENE
+    bool "Share the active Bluetooth profile with both halves (screen pictures)"
+    default $(dt_compat_enabled,$(DT_COMPAT_ZMK_BEHAVIOR_PC_SCENE))

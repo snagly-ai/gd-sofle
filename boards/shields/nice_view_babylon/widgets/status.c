@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: MIT
  *
  * Left (central) half: battery and connection status across the top of the
- * screen, the ziggurat Etemenanki below. Based on the stock nice!view status widget
+ * screen, the ziggurat Etemenanki below (night on PC one, day on PC two).
+ * Based on the stock nice!view status widget
  * with the typing-speed graph, profile dots and layer name removed.
  */
 
@@ -16,6 +17,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/battery.h>
 #include <zmk/display.h>
 #include "status.h"
+#include "scene.h"
 #include <zmk/events/usb_conn_state_changed.h>
 #include <zmk/event_manager.h>
 #include <zmk/events/battery_state_changed.h>
@@ -26,6 +28,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/endpoints.h>
 
 LV_IMG_DECLARE(etemenanki);
+LV_IMG_DECLARE(etemenanki_night);
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -154,8 +157,8 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, LV_IMG_CF_TRUE_COLOR);
 
     lv_obj_t *art = lv_img_create(widget->obj);
-    lv_img_set_src(art, &etemenanki);
     lv_obj_align(art, LV_ALIGN_TOP_LEFT, 0, 0);
+    scene_art_add(art, &etemenanki, &etemenanki_night); // day on PC two, night on PC one
 
     sys_slist_append(&widgets, &widget->node);
     widget_battery_status_init();

@@ -15,9 +15,12 @@ child-binding:
       description: Layer number, counting from 0 in keymap order.
 
     hue:
-      type: int
+      type: array
       required: true
-      description: 0-360. 0 red, 30 orange, 60 yellow, 120 green, 180 cyan, 240 blue, 300 magenta.
+      description: |
+        0-360. 0 red, 30 orange, 60 yellow, 120 green, 180 cyan, 240 blue, 300 magenta.
+        One value per Bluetooth profile: <PC-one PC-two ...>. A single value
+        is used on every profile; profiles past the end of the list use the first.
 
     saturation:
       type: int

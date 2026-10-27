@@ -1,4 +1,5 @@
-"""Draw the two nice!view pictures (68 x 140, 1-bit) in screen-up orientation.
+"""Draw the nice!view pictures (68 x 140, 1-bit) in screen-up orientation:
+day versions (PC two) and night versions (PC one) of both.
 
 0 = black ink, 1 = white background (matches the nice!view palette).
 """
@@ -82,6 +83,57 @@ def ground(img, d, y0):
         d.line([x, y0 + 7, x + 3, y0 + 7], fill=PAPER)
 
 
+# ---------------------------------------------------------------------- night
+def sky_mask(img):
+    """White pixels connected to the top edge: the open sky (and terrace tops)."""
+    mask = [[False] * W for _ in range(H)]
+    stack = [(x, 0) for x in range(W) if img.getpixel((x, 0)) == PAPER]
+    while stack:
+        x, y = stack.pop()
+        if not (0 <= x < W and 0 <= y < H) or mask[y][x] or img.getpixel((x, y)) != PAPER:
+            continue
+        mask[y][x] = True
+        stack.extend(((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+    return mask
+
+
+def moon(img, d, cx, cy, r):
+    """White crescent moon (the night sky is already black)."""
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=PAPER)
+    d.ellipse([cx - r + 3, cy - r - 2, cx + r + 3, cy + r - 2], fill=INK)
+
+
+def to_night(img, d, moon_xy, seed):
+    """Turn a daytime picture (drawn without sun, birds or clouds) into night:
+    black sky, buildings lit white by the moon, a crescent moon and stars."""
+    mask = sky_mask(img)
+    sky = lambda x, y: 0 <= x < W and 0 <= y < H and mask[y][x]
+    rim = [(x, y) for y in range(H) for x in range(W)
+           if not mask[y][x] and img.getpixel((x, y)) == INK
+           and any(sky(x + a, y + b) for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)))]
+    for y in range(H):
+        for x in range(W):
+            if mask[y][x]:
+                img.putpixel((x, y), INK)
+    for x, y in rim:                     # moonlight catches the edges facing the sky
+        img.putpixel((x, y), PAPER)
+
+    moon(img, d, *moon_xy, 6)
+    rng = random.Random(seed)
+    mx, my = moon_xy
+    clear = lambda x, y: all(sky(x + a, y + b) for a in range(-2, 3) for b in range(-2, 3))
+    placed = 0
+    while placed < 22:
+        x, y = rng.randint(1, W - 2), rng.randint(1, 75)
+        if (x - mx) ** 2 + (y - my) ** 2 < 120 or not clear(x, y):
+            continue
+        px(img, x, y, PAPER)
+        if placed % 7 == 0:              # a few brighter, twinkling stars
+            for a, b in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                px(img, x + a, y + b, PAPER)
+        placed += 1
+
+
 # ------------------------------------------------------------------- Etemenanki
 def stair_band(img, d, xa, ya, xb, yb):
     """Diagonal flight of steps from (xa, ya) up to (xb, yb), 3 px thick."""
@@ -97,16 +149,17 @@ def stair_band(img, d, xa, ya, xb, yb):
             px(img, x, y - 1, INK)      # step edges
 
 
-def etemenanki():
+def etemenanki(night=False):
     """The great ziggurat of Babylon: stepped tiers, niched walls, the triple
     stairway on the front and the high temple on top."""
     img, d = new()
     cx = 34
 
-    sun(img, d, 13, 15, 5)
-    for b in ((44, 12), (52, 9), (58, 15)):
-        bird(img, *b)
-    cloud(img, d, 50, 30, 20, 7)
+    if not night:
+        sun(img, d, 13, 15, 5)
+        for b in ((44, 12), (52, 9), (58, 15)):
+            bird(img, *b)
+        cloud(img, d, 50, 30, 20, 7)
 
     ground_y = 129
     ground(img, d, ground_y)
@@ -165,6 +218,9 @@ def etemenanki():
     px(img, cx - 2, sy0 + 5, PAPER)
     px(img, cx + 2, sy0 + 5, PAPER)
 
+    if night:
+        to_night(img, d, (14, 14), seed=11)
+        d.rectangle([cx - 1, sy0 + 7, cx + 1, sy1 - 1], fill=PAPER)   # lamp-lit temple door
     return img
 
 
@@ -221,14 +277,15 @@ def palm(img, d, x, base_y, height, lean):
     d.rectangle([tx - 1, ty - 1, tx + 2, ty + 1], fill=INK)
 
 
-def hanging_gardens():
+def hanging_gardens(night=False):
     img, d = new()
     rng = random.Random(5)
     cx = 34
 
-    sun(img, d, 55, 12, 5)
-    for b in ((10, 9), (17, 14), (24, 8)):
-        bird(img, *b)
+    if not night:
+        sun(img, d, 55, 12, 5)
+        for b in ((10, 9), (17, 14), (24, 8)):
+            bird(img, *b)
 
     river_y = 130
     d.line([0, river_y, W - 1, river_y], fill=INK)
@@ -256,6 +313,8 @@ def hanging_gardens():
             d.line([ax + 1, top + 1, ax + 2, top + 1], fill=INK)
             for yy in range(top + 4, y1_ - 2, 2):
                 px(img, ax + 1, yy, PAPER)
+            if night and (ax // 6 + i) % 3 == 0:          # a few lamp-lit arches
+                d.rectangle([ax + 1, top + 4, ax + 2, y1_ - 3], fill=PAPER)
         # central stairway
         for yy in range(y0 + 3, y1_, 2):
             d.line([cx - 3, yy, cx + 3, yy], fill=INK)
@@ -268,6 +327,8 @@ def hanging_gardens():
     round_tree(img, d, tx0 + 5, ty0 - 4, 4)
     round_tree(img, d, tx1 - 6, ty0 - 4, 4)
     palm(img, d, cx, ty0 - 4, 22, 1)
+    if night:
+        to_night(img, d, (54, 13), seed=7)
     return img
 
 
@@ -275,3 +336,5 @@ if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "."
     etemenanki().save(f"{out}/etemenanki.png")
     hanging_gardens().save(f"{out}/gardens.png")
+    etemenanki(night=True).save(f"{out}/etemenanki_night.png")
+    hanging_gardens(night=True).save(f"{out}/gardens_night.png")

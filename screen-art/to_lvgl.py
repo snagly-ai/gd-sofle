@@ -51,12 +51,15 @@ const lv_img_dsc_t {name} = {{
 """
 
 out = sys.argv[1]
-body = encode("etemenanki.png", "etemenanki") + encode("gardens.png", "gardens")
+body = "".join(encode(f"{n}.png", n) for n in
+               ("etemenanki", "gardens", "etemenanki_night", "gardens_night"))
 header = """/*
  * Screen pictures for the nice!view (1-bit, 140x68, stored turned 90 degrees
  * to match how the display is mounted).
- *   etemenanki - the ziggurat Etemenanki (left half)
- *   gardens    - Hanging Gardens of Babylon (right half)
+ *   etemenanki       - the ziggurat Etemenanki (left half), day (PC two)
+ *   gardens          - Hanging Gardens of Babylon (right half), day (PC two)
+ *   etemenanki_night - the same at night (PC one)
+ *   gardens_night    - the same at night (PC one)
  * Original pixel art. Regenerate with the scripts in screen-art/ in this repo.
  *
  * SPDX-License-Identifier: MIT

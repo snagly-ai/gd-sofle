@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: MIT
  *
  * Right (peripheral) half: battery and link-to-left-half status across the
- * top of the screen, the Hanging Gardens of Babylon below. Based on the stock
+ * top of the screen, the Hanging Gardens of Babylon below (night on PC one, day
+ * on PC two - the left half tells this half which PC is active). Based on the stock
  * nice!view peripheral widget with its randomly chosen stock picture replaced.
  */
 
@@ -24,8 +25,10 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/ble.h>
 
 #include "status.h"
+#include "scene.h"
 
 LV_IMG_DECLARE(gardens);
+LV_IMG_DECLARE(gardens_night);
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -116,8 +119,8 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     lv_canvas_set_buffer(top, widget->cbuf, CANVAS_SIZE, CANVAS_SIZE, LV_IMG_CF_TRUE_COLOR);
 
     lv_obj_t *art = lv_img_create(widget->obj);
-    lv_img_set_src(art, &gardens);
     lv_obj_align(art, LV_ALIGN_TOP_LEFT, 0, 0);
+    scene_art_add(art, &gardens, &gardens_night); // day on PC two, night on PC one
 
     sys_slist_append(&widgets, &widget->node);
     widget_battery_status_init();

@@ -1,8 +1,9 @@
 /*
  * Layer colours for the RGB underglow.
  *
- * Runs on the central (left) half. Whenever the active layer changes it sends
- * the colour configured for that layer through the stock &rgb_ug behaviour.
+ * Runs on the central (left) half. Whenever the active layer or Bluetooth
+ * profile changes it sends the colour configured for that layer and profile
+ * (PC one / PC two) through the stock &rgb_ug behaviour.
  * &rgb_ug is a global behaviour, so the right half receives the same commands
  * over the split link and both halves stay in step.
  *
@@ -26,6 +27,11 @@
 #include <zmk/rgb_underglow.h>
 #include <dt-bindings/zmk/rgb.h>
 
+#if IS_ENABLED(CONFIG_ZMK_BLE)
+#include <zmk/ble.h>
+#include <zmk/events/ble_active_profile_changed.h>
+#endif
+
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE)
 #include <zephyr/bluetooth/conn.h>
 #endif
@@ -39,9 +45,12 @@ BUILD_ASSERT(DT_NODE_EXISTS(DT_NODELABEL(rgb_ug)),
 
 #define RGB_UG_DEV DEVICE_DT_NAME(DT_NODELABEL(rgb_ug))
 
+#define LAYER_COLOR_MAX_PROFILES 5
+
 struct layer_color {
     uint8_t layer;
-    uint16_t hue;
+    uint16_t hues[LAYER_COLOR_MAX_PROFILES]; /* one per Bluetooth profile */
+    uint8_t hue_count;
     uint8_t sat;
     int16_t brt; /* -1 keeps the brightness set with the RGB keys */
     uint8_t effect;
@@ -50,7 +59,8 @@ struct layer_color {
 #define LAYER_COLOR_ENTRY(node)                                                                    \
     {                                                                                              \
         .layer = DT_PROP(node, layer),                                                             \
-        .hue = DT_PROP(node, hue),                                                                 \
+        .hues = DT_PROP(node, hue),                                                                \
+        .hue_count = DT_PROP_LEN(node, hue),                                                       \
         .sat = DT_PROP(node, saturation),                                                          \
         .brt = DT_PROP_OR(node, brightness, -1),                                                   \
         .effect = DT_PROP(node, effect),                                                           \
@@ -59,6 +69,7 @@ struct layer_color {
 static const struct layer_color layer_colors[] = {DT_INST_FOREACH_CHILD(0, LAYER_COLOR_ENTRY)};
 
 static const struct layer_color *last_applied;
+static uint16_t last_hue;
 static bool force_apply;
 static uint8_t resync_left;
 
@@ -79,6 +90,18 @@ static const struct layer_color *find_color(void) {
     }
 
     return NULL;
+}
+
+/* Hue for the active Bluetooth profile: first value = PC one, second = PC two. */
+static uint16_t hue_for_profile(const struct layer_color *color) {
+    int profile = 0;
+#if IS_ENABLED(CONFIG_ZMK_BLE)
+    profile = zmk_ble_active_profile_index();
+#endif
+    if (profile < 0 || profile >= color->hue_count) {
+        profile = 0;
+    }
+    return color->hues[profile];
 }
 
 static void send_rgb_command(uint32_t cmd, uint32_t value) {
@@ -108,13 +131,16 @@ static K_WORK_DELAYABLE_DEFINE(apply_work, apply_work_handler);
 static void apply_work_handler(struct k_work *work) {
     const struct layer_color *color = find_color();
 
-    if (color != NULL && (color != last_applied || force_apply)) {
+    uint16_t hue = color != NULL ? hue_for_profile(color) : 0;
+
+    if (color != NULL && (color != last_applied || hue != last_hue || force_apply)) {
         uint8_t brt = color->brt >= 0 ? (uint8_t)color->brt : zmk_rgb_underglow_calc_brt(0).b;
 
         send_rgb_command(RGB_EFS_CMD, color->effect);
-        send_rgb_command(RGB_COLOR_HSB_CMD, RGB_COLOR_HSB_VAL(color->hue, color->sat, brt));
+        send_rgb_command(RGB_COLOR_HSB_CMD, RGB_COLOR_HSB_VAL(hue, color->sat, brt));
 
         last_applied = color;
+        last_hue = hue;
     }
 
     force_apply = false;
@@ -135,15 +161,16 @@ static void schedule_resync(void) {
 }
 
 static int layer_color_listener(const zmk_event_t *eh) {
-    if (as_zmk_layer_state_changed(eh) != NULL) {
-        k_work_reschedule(&apply_work, K_MSEC(CONFIG_ZMK_LAYER_COLOR_DEBOUNCE_MS));
-    }
-
+    /* Layer changes, and switching PC (Bluetooth profile), both recolour. */
+    k_work_reschedule(&apply_work, K_MSEC(CONFIG_ZMK_LAYER_COLOR_DEBOUNCE_MS));
     return ZMK_EV_EVENT_BUBBLE;
 }
 
 ZMK_LISTENER(layer_color, layer_color_listener);
 ZMK_SUBSCRIPTION(layer_color, zmk_layer_state_changed);
+#if IS_ENABLED(CONFIG_ZMK_BLE)
+ZMK_SUBSCRIPTION(layer_color, zmk_ble_active_profile_changed);
+#endif
 
 #if IS_ENABLED(CONFIG_ZMK_SPLIT_BLE)
 /* The left half is "central" only towards the right half, so a connection in

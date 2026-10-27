@@ -54,22 +54,31 @@
             tapping-term-ms = <1000>;
             bindings = <&bt>, <&none>;
         };
+
+        // Tells both halves which PC is active, so the screens show night on
+        // PC one and day on PC two (see src/pc_scene.c). Runs automatically;
+        // not for a key. Name must stay 8 characters or fewer.
+        pc_scene: pc_scene {
+            compatible = "zmk,behavior-pc-scene";
+            #binding-cells = <1>;
+        };
     };
 
-    // RGB colour by layer (see src/layer_color.c). The colour changes as soon
-    // as a layer becomes active, on both halves.
-    // hue: 0 red, 30 orange, 60 yellow, 120 green, 160 teal, 180 cyan,
-    //      240 blue, 300 magenta
+    // RGB colour by layer and PC (see src/layer_color.c). The colour changes as
+    // soon as a layer becomes active or you switch PC, on both halves.
+    // hue = <PC-one PC-two>: cool colours for PC one, warm colours for PC two.
+    // hue: 0 red, 30 orange/amber, 60 yellow, 120 green, 160 teal, 180 cyan,
+    //      240 blue, 280 violet, 300 magenta, 330 pink
     // Optional per layer: saturation = <0-100>; brightness = <0-100>;
     //   effect = <0 solid, 1 breathe, 2 spectrum, 3 swirl>;
     // Brightness left out = whatever you set with RGB_BRI / RGB_BRD.
     layer_colors {
         compatible = "zmk,layer-color";
 
-        base     { layer = <0>; hue = <160>; };  // LAYER0: teal
-        mouse    { layer = <1>; hue = <240>; };  // MouseMO (hold): blue
-        rh_mouse { layer = <2>; hue = <30>;  };  // RH_Mouse (toggle): orange
-        fn_rgb   { layer = <3>; hue = <300>; };  // RGBF12Extra: magenta
+        base     { layer = <0>; hue = <160  30>; };  // LAYER0:          teal   / amber
+        mouse    { layer = <1>; hue = <240   0>; };  // MouseMO (hold):  blue   / red
+        rh_mouse { layer = <2>; hue = <120  60>; };  // RH_Mouse (tog):  green  / yellow
+        fn_rgb   { layer = <3>; hue = <280 330>; };  // RGBF12Extra:     violet / pink
     };
 
     combos {
