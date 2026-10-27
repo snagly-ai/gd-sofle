@@ -12,9 +12,11 @@
 
 #include "scene.h"
 
-#if IS_ENABLED(CONFIG_ZMK_PC_SCENE)
-#include <pc_scene.h>
+#if !IS_ENABLED(CONFIG_ZMK_PC_SCENE)
+#error "Day/night pictures need the pc_scene behaviour node in the keymap (CONFIG_ZMK_PC_SCENE)"
 #endif
+
+#include <pc_scene.h>
 
 #define PC_TWO_PROFILE 1 /* profiles count from 0: 0 = PC one, 1 = PC two */
 
@@ -39,17 +41,11 @@ static void scene_update_cb(struct scene_state state) {
 }
 
 static struct scene_state scene_get_state(const zmk_event_t *eh) {
-#if IS_ENABLED(CONFIG_ZMK_PC_SCENE)
     return (struct scene_state){.profile = zmk_pc_scene_profile()};
-#else
-    return (struct scene_state){.profile = 0};
-#endif
 }
 
 ZMK_DISPLAY_WIDGET_LISTENER(widget_scene, struct scene_state, scene_update_cb, scene_get_state)
-#if IS_ENABLED(CONFIG_ZMK_PC_SCENE)
 ZMK_SUBSCRIPTION(widget_scene, zmk_pc_scene_changed);
-#endif
 
 void scene_art_add(lv_obj_t *obj, const lv_img_dsc_t *day, const lv_img_dsc_t *night) {
     if (art_count < ARRAY_SIZE(arts)) {
