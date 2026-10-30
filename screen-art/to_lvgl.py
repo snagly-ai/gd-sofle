@@ -28,12 +28,14 @@ def encode(path, name):
 
 const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_{upper} uint8_t
     {name}_map[] = {{
+    /* The nice!view shows LVGL colours inverted, so this palette is swapped
+     * to make the pictures appear as drawn (day = white sky, night = black). */
 #if CONFIG_NICE_VIEW_BABYLON_INVERTED
-        0xff, 0xff, 0xff, 0xff, /*Color of index 0*/
-        0x00, 0x00, 0x00, 0xff, /*Color of index 1*/
-#else
         0x00, 0x00, 0x00, 0xff, /*Color of index 0*/
         0xff, 0xff, 0xff, 0xff, /*Color of index 1*/
+#else
+        0xff, 0xff, 0xff, 0xff, /*Color of index 0*/
+        0x00, 0x00, 0x00, 0xff, /*Color of index 1*/
 #endif
 
 {chr(10).join(lines)}

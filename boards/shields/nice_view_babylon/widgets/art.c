@@ -22,12 +22,14 @@
 
 const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_ETEMENANKI uint8_t
     etemenanki_map[] = {
+    /* The nice!view shows LVGL colours inverted, so this palette is swapped
+     * to make the pictures appear as drawn (day = white sky, night = black). */
 #if CONFIG_NICE_VIEW_BABYLON_INVERTED
-        0xff, 0xff, 0xff, 0xff, /*Color of index 0*/
-        0x00, 0x00, 0x00, 0xff, /*Color of index 1*/
-#else
         0x00, 0x00, 0x00, 0xff, /*Color of index 0*/
         0xff, 0xff, 0xff, 0xff, /*Color of index 1*/
+#else
+        0xff, 0xff, 0xff, 0xff, /*Color of index 0*/
+        0x00, 0x00, 0x00, 0xff, /*Color of index 1*/
 #endif
 
         0xab, 0x9f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -130,12 +132,14 @@ const lv_img_dsc_t etemenanki = {
 
 const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_GARDENS uint8_t
     gardens_map[] = {
+    /* The nice!view shows LVGL colours inverted, so this palette is swapped
+     * to make the pictures appear as drawn (day = white sky, night = black). */
 #if CONFIG_NICE_VIEW_BABYLON_INVERTED
-        0xff, 0xff, 0xff, 0xff, /*Color of index 0*/
-        0x00, 0x00, 0x00, 0xff, /*Color of index 1*/
-#else
         0x00, 0x00, 0x00, 0xff, /*Color of index 0*/
         0xff, 0xff, 0xff, 0xff, /*Color of index 1*/
+#else
+        0xff, 0xff, 0xff, 0xff, /*Color of index 0*/
+        0x00, 0x00, 0x00, 0xff, /*Color of index 1*/
 #endif
 
         0xbf, 0xbf, 0xff, 0xfe, 0x03, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
@@ -238,12 +242,14 @@ const lv_img_dsc_t gardens = {
 
 const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_ETEMENANKI_NIGHT uint8_t
     etemenanki_night_map[] = {
+    /* The nice!view shows LVGL colours inverted, so this palette is swapped
+     * to make the pictures appear as drawn (day = white sky, night = black). */
 #if CONFIG_NICE_VIEW_BABYLON_INVERTED
-        0xff, 0xff, 0xff, 0xff, /*Color of index 0*/
-        0x00, 0x00, 0x00, 0xff, /*Color of index 1*/
-#else
         0x00, 0x00, 0x00, 0xff, /*Color of index 0*/
         0xff, 0xff, 0xff, 0xff, /*Color of index 1*/
+#else
+        0xff, 0xff, 0xff, 0xff, /*Color of index 0*/
+        0x00, 0x00, 0x00, 0xff, /*Color of index 1*/
 #endif
 
         0xab, 0xa0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -346,12 +352,14 @@ const lv_img_dsc_t etemenanki_night = {
 
 const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMG_GARDENS_NIGHT uint8_t
     gardens_night_map[] = {
+    /* The nice!view shows LVGL colours inverted, so this palette is swapped
+     * to make the pictures appear as drawn (day = white sky, night = black). */
 #if CONFIG_NICE_VIEW_BABYLON_INVERTED
-        0xff, 0xff, 0xff, 0xff, /*Color of index 0*/
-        0x00, 0x00, 0x00, 0xff, /*Color of index 1*/
-#else
         0x00, 0x00, 0x00, 0xff, /*Color of index 0*/
         0xff, 0xff, 0xff, 0xff, /*Color of index 1*/
+#else
+        0xff, 0xff, 0xff, 0xff, /*Color of index 0*/
+        0x00, 0x00, 0x00, 0xff, /*Color of index 1*/
 #endif
 
         0xbf, 0xbf, 0xff, 0xfe, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

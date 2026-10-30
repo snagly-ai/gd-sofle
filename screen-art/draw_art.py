@@ -149,9 +149,10 @@ def stair_band(img, d, xa, ya, xb, yb):
             px(img, x, y - 1, INK)      # step edges
 
 
-def etemenanki(night=False):
+def etemenanki(night=False, stage=4):
     """The great ziggurat of Babylon: stepped tiers, niched walls, the triple
-    stairway on the front and the high temple on top."""
+    stairway on the front and the high temple on top.
+    stage: 4 finished, 3 temple missing, 2 three tiers, 1 first tier, 0 foundations."""
     img, d = new()
     cx = 34
 
@@ -166,62 +167,146 @@ def etemenanki(night=False):
 
     widths = [64, 52, 42, 34, 27, 21]
     heights = [20, 13, 11, 10, 9, 8]
+    n_tiers = {4: 6, 3: 6, 2: 3, 1: 1, 0: 0}[stage]
     y1 = ground_y
     tiers = []
-    for w, h in zip(widths, heights):
+    for w, h in zip(widths[:n_tiers], heights[:n_tiers]):
+        if stage == 1:
+            h = 12                                   # first tier only half built
         tiers.append((cx - w // 2, y1 - h, cx + w // 2, y1))
         y1 -= h
 
     for i, (x0, y0, x1, y1_) in enumerate(tiers):
         d.rectangle([x0, y0, x1, y1_], fill=PAPER, outline=INK)
-        # niched brick walls: vertical recesses
-        for x in range(x0 + 3, x1 - 1, 3):
+        for x in range(x0 + 3, x1 - 1, 3):          # niched brick walls
             d.line([x, y0 + 3, x, y1_ - 1], fill=INK)
-        # shadow on the right-hand third
         shade_x = x1 - (x1 - x0) // 3
         dither_rect(img, shade_x, y0 + 2, x1 - 1, y1_ - 1, 2, phase=i)
-        # terrace ledge
         d.rectangle([x0 - 1, y0, x1 + 1, y0 + 1], fill=INK)
 
-    # the triple stairway: two side flights along the front of the first stage
-    t0x0, t0y0, t0x1, _ = tiers[0]
-    stair_band(img, d, t0x0 + 2, ground_y - 1, cx - 6, t0y0 + 4)
-    stair_band(img, d, t0x1 - 2, ground_y - 1, cx + 6, t0y0 + 4)
+    if stage == 0:
+        foundations(img, d, cx, ground_y, widths[0])
+    else:
+        t0x0, t0y0, t0x1, _ = tiers[0]
+        if stage >= 2:
+            stair_band(img, d, t0x0 + 2, ground_y - 1, cx - 6, t0y0 + 4)
+            stair_band(img, d, t0x1 - 2, ground_y - 1, cx + 6, t0y0 + 4)
+            top_of_central = tiers[1][1]
+        else:
+            top_of_central = t0y0
+        d.rectangle([cx - 4, top_of_central, cx + 4, ground_y], fill=PAPER)
+        d.line([cx - 5, top_of_central, cx - 5, ground_y], fill=INK)
+        d.line([cx + 5, top_of_central, cx + 5, ground_y], fill=INK)
+        for y in range(top_of_central + 1, ground_y, 2):
+            d.line([cx - 4, y, cx + 4, y], fill=INK)
+        d.rectangle([cx - 7, ground_y - 3, cx - 6, ground_y], fill=INK)
+        d.rectangle([cx + 6, ground_y - 3, cx + 7, ground_y], fill=INK)
 
-    # ...and the great central flight running straight up to the second stage
-    top_of_central = tiers[1][1]
-    d.rectangle([cx - 4, top_of_central, cx + 4, ground_y], fill=PAPER)
-    d.line([cx - 5, top_of_central, cx - 5, ground_y], fill=INK)
-    d.line([cx + 5, top_of_central, cx + 5, ground_y], fill=INK)
-    for y in range(top_of_central + 1, ground_y, 2):
-        d.line([cx - 4, y, cx + 4, y], fill=INK)
-    d.rectangle([cx - 7, ground_y - 3, cx - 6, ground_y], fill=INK)   # gate posts
-    d.rectangle([cx + 6, ground_y - 3, cx + 7, ground_y], fill=INK)
+        if len(tiers) > 2:
+            shrine_base = tiers[-1][1]
+            d.rectangle([cx - 2, shrine_base, cx + 2, top_of_central], fill=PAPER)
+            d.line([cx - 3, shrine_base, cx - 3, top_of_central], fill=INK)
+            d.line([cx + 3, shrine_base, cx + 3, top_of_central], fill=INK)
+            for y in range(shrine_base + 1, top_of_central, 2):
+                d.line([cx - 2, y, cx + 2, y], fill=INK)
 
-    # narrower path continuing up the upper stages to the temple
-    shrine_base = tiers[-1][1]
-    d.rectangle([cx - 2, shrine_base, cx + 2, top_of_central], fill=PAPER)
-    d.line([cx - 3, shrine_base, cx - 3, top_of_central], fill=INK)
-    d.line([cx + 3, shrine_base, cx + 3, top_of_central], fill=INK)
-    for y in range(shrine_base + 1, top_of_central, 2):
-        d.line([cx - 2, y, cx + 2, y], fill=INK)
-
-    # the high temple of Marduk on the summit (glazed brick, so darker)
-    sx0, sx1 = cx - 8, cx + 8
-    sy0, sy1 = shrine_base - 12, shrine_base
-    d.rectangle([sx0, sy0, sx1, sy1], fill=PAPER, outline=INK)
-    dither_rect(img, sx0 + 1, sy0 + 3, sx1 - 1, sy1 - 1, 2)
-    d.line([sx0, sy0 + 2, sx1, sy0 + 2], fill=INK)
-    for x in range(sx0, sx1 + 1, 3):                     # stepped battlements
-        d.rectangle([x, sy0 - 2, x + 1, sy0], fill=INK)
-    d.rectangle([cx - 2, sy0 + 5, cx + 2, sy1], fill=INK)  # doorway
-    px(img, cx - 2, sy0 + 5, PAPER)
-    px(img, cx + 2, sy0 + 5, PAPER)
+    sx0 = sy0 = sy1 = None
+    if stage == 4:
+        shrine_base = tiers[-1][1]
+        sx0, sx1 = cx - 8, cx + 8
+        sy0, sy1 = shrine_base - 12, shrine_base
+        d.rectangle([sx0, sy0, sx1, sy1], fill=PAPER, outline=INK)
+        dither_rect(img, sx0 + 1, sy0 + 3, sx1 - 1, sy1 - 1, 2)
+        d.line([sx0, sy0 + 2, sx1, sy0 + 2], fill=INK)
+        for x in range(sx0, sx1 + 1, 3):
+            d.rectangle([x, sy0 - 2, x + 1, sy0], fill=INK)
+        d.rectangle([cx - 2, sy0 + 5, cx + 2, sy1], fill=INK)
+        px(img, cx - 2, sy0 + 5, PAPER)
+        px(img, cx + 2, sy0 + 5, PAPER)
+    elif stage == 3:
+        tx0, ty0, tx1, _ = tiers[-1]
+        scaffold(img, d, tx0 + 1, tx1 - 1, ty0 - 12, ty0)       # where the temple goes
+        bricks(img, d, tx0 + 2, ty0)
+        worker(img, tx1 - 4, ty0, carry=True)
+    elif stage == 2:
+        tx0, ty0, tx1, _ = tiers[-1]
+        scaffold(img, d, tx0 + 3, tx1 - 3, ty0 - 11, ty0)       # next tier going up
+        for wx, wy in ((t0x0 + 8, ground_y - 6), (t0x1 - 10, ground_y - 6), (cx - 2, tiers[1][1] + 6)):
+            worker(img, wx, wy, carry=True)                      # hauling bricks up the stairs
+        bricks(img, d, 2, ground_y)
+        bricks(img, d, W - 9, ground_y)
+    elif stage == 1:
+        t0x0, t0y0, t0x1, _ = tiers[0]
+        shaduf(img, d, 8, ground_y, t0y0)
+        bricks(img, d, t0x1 - 10, t0y0)
+        worker(img, t0x1 - 3, t0y0)
+        worker(img, 56, ground_y)
+        bricks(img, d, 60, ground_y)
 
     if night:
         to_night(img, d, (14, 14), seed=11)
-        d.rectangle([cx - 1, sy0 + 7, cx + 1, sy1 - 1], fill=PAPER)   # lamp-lit temple door
+        if stage == 4:
+            d.rectangle([cx - 1, sy0 + 7, cx + 1, sy1 - 1], fill=PAPER)   # lamp-lit temple door
     return img
+
+
+# --------------------------------------------------------------- construction
+def scaffold(img, d, x0, x1, y0, y1):
+    """Wooden scaffolding: poles every 5 px, lashed cross-bars every 4 px."""
+    for x in range(x0, x1 + 1, 5):
+        d.line([x, y0, x, y1], fill=INK)
+    for y in range(y0 + 1, y1, 4):
+        d.line([x0, y, x1, y], fill=INK)
+    d.line([x0, y1 - 1, min(x0 + 5, x1), y0 + 1], fill=INK)  # diagonal brace
+
+
+def bricks(img, d, x, base_y):
+    """Small stack of mud bricks standing on base_y."""
+    for row, (dx, w) in enumerate(((0, 7), (1, 5), (2, 3))):
+        y = base_y - 2 - row * 2
+        d.rectangle([x + dx, y, x + dx + w - 1, y + 1], fill=INK)
+        px(img, x + dx + w // 2, y, PAPER)
+
+
+def worker(img, x, feet_y, carry=False):
+    """Tiny labourer, 6 px tall, feet on feet_y; optionally with a brick load."""
+    px(img, x, feet_y - 6)                                # head
+    for y in range(feet_y - 5, feet_y - 2):               # body
+        px(img, x, y)
+    px(img, x - 1, feet_y - 1); px(img, x + 1, feet_y - 1)  # legs
+    px(img, x - 1, feet_y - 2); px(img, x + 1, feet_y - 2)
+    if carry:
+        for a in (-1, 0, 1):                              # basket on the head
+            px(img, x + a, feet_y - 8)
+        px(img, x - 1, feet_y - 7); px(img, x + 1, feet_y - 7)
+    else:
+        px(img, x - 1, feet_y - 4); px(img, x + 1, feet_y - 5)  # arms
+
+
+def shaduf(img, d, x, ground_y, top_y):
+    """Lifting crane: an upright post with a pivoting beam and a bucket."""
+    post_top = top_y - 10
+    d.line([x, ground_y, x, post_top], fill=INK)
+    d.line([x + 1, ground_y, x + 1, post_top], fill=INK)
+    d.line([x - 5, post_top + 6, x + 14, post_top - 4], fill=INK)   # beam
+    d.rectangle([x - 7, post_top + 5, x - 4, post_top + 8], fill=INK)  # counterweight
+    d.line([x + 14, post_top - 4, x + 14, post_top + 4], fill=INK)  # rope
+    d.rectangle([x + 13, post_top + 5, x + 15, post_top + 7], fill=INK)  # bucket of bricks
+
+
+def foundations(img, d, cx, ground_y, width):
+    """Footprint marked out with stakes and string, first course of bricks laid."""
+    x0, x1 = cx - width // 2, cx + width // 2
+    d.rectangle([x0, ground_y - 3, x1, ground_y], fill=PAPER, outline=INK)
+    for x in range(x0 + 2, x1 - 1, 4):
+        d.line([x, ground_y - 3, x, ground_y - 2], fill=INK)
+    for x in (x0 - 1, cx, x1 + 1):                        # stakes
+        d.line([x, ground_y - 8, x, ground_y - 4], fill=INK)
+    d.line([x0 - 1, ground_y - 7, x1 + 1, ground_y - 7], fill=INK)  # string line
+    bricks(img, d, x0 + 4, ground_y - 3)
+    bricks(img, d, x1 - 12, ground_y - 3)
+    worker(img, cx - 8, ground_y - 3, carry=True)
+    worker(img, cx + 9, ground_y - 3)
 
 
 # ------------------------------------------------------- Hanging Gardens of Babylon
@@ -277,7 +362,16 @@ def palm(img, d, x, base_y, height, lean):
     d.rectangle([tx - 1, ty - 1, tx + 2, ty + 1], fill=INK)
 
 
-def hanging_gardens(night=False):
+def sapling(img, x, base_y):
+    for y in range(base_y - 4, base_y):
+        px(img, x, y)
+    for a, b in ((-1, -4), (1, -5), (-2, -5), (2, -6), (-1, -6), (0, -6), (1, -4)):
+        px(img, x + a, base_y + b)
+
+
+def hanging_gardens(night=False, stage=4):
+    """stage: 4 finished, 3 roof garden bare, 2 two terraces, 1 arches only,
+    0 foundations by the river."""
     img, d = new()
     rng = random.Random(5)
     cx = 34
@@ -296,9 +390,10 @@ def hanging_gardens(night=False):
 
     widths = [66, 54, 42, 30]
     heights = [22, 20, 18, 16]
+    n_levels = {4: 4, 3: 4, 2: 2, 1: 1, 0: 0}[stage]
     y1 = river_y - 1
     levels = []
-    for w, h in zip(widths, heights):
+    for w, h in zip(widths[:n_levels], heights[:n_levels]):
         levels.append((cx - w // 2, y1 - h, cx + w // 2, y1))
         y1 -= h
 
@@ -320,21 +415,51 @@ def hanging_gardens(night=False):
             d.line([cx - 3, yy, cx + 3, yy], fill=INK)
         d.line([cx - 4, y0 + 2, cx - 4, y1_], fill=INK)
         d.line([cx + 4, y0 + 2, cx + 4, y1_], fill=INK)
-        plant_band(img, d, x0, x1, y0, rng, vine_max=9)
+        greenery = (stage == 4 or (stage == 3 and i < 3) or (stage == 2 and i == 0))
+        if greenery:
+            plant_band(img, d, x0, x1, y0, rng, vine_max=9)
+        else:
+            d.rectangle([x0 - 1, y0, x1 + 1, y0 + 1], fill=INK)   # bare terrace ledge
 
-    # trees on the roof garden
-    tx0, ty0, tx1, _ = levels[-1]
-    round_tree(img, d, tx0 + 5, ty0 - 4, 4)
-    round_tree(img, d, tx1 - 6, ty0 - 4, 4)
-    palm(img, d, cx, ty0 - 4, 22, 1)
+    if stage == 4:                               # trees on the roof garden
+        tx0, ty0, tx1, _ = levels[-1]
+        round_tree(img, d, tx0 + 5, ty0 - 4, 4)
+        round_tree(img, d, tx1 - 6, ty0 - 4, 4)
+        palm(img, d, cx, ty0 - 4, 22, 1)
+    elif stage == 3:                             # roof garden still bare
+        tx0, ty0, tx1, _ = levels[-1]
+        scaffold(img, d, tx0 + 2, tx1 - 2, ty0 - 9, ty0)
+        sapling(img, tx0 + 4, ty0)
+        worker(img, tx1 - 3, ty0, carry=True)
+    elif stage == 2:
+        tx0, ty0, tx1, _ = levels[-1]
+        for x in range(tx0 + 4, tx1 - 2, 8):
+            if abs(x - cx) > 5:
+                sapling(img, x, ty0)
+        scaffold(img, d, cx - 21, cx + 21, ty0 - 12, ty0)     # next terrace going up
+        worker(img, cx - 13, ty0, carry=True)
+        worker(img, cx + 12, ty0)
+        bricks(img, d, 2, river_y - 1)
+    elif stage == 1:
+        tx0, ty0, tx1, _ = levels[0]
+        shaduf(img, d, 6, river_y, ty0)
+        bricks(img, d, tx0 + 6, ty0)
+        worker(img, tx1 - 6, ty0, carry=True)
+        worker(img, cx + 9, ty0)
+    else:
+        foundations(img, d, cx, river_y - 1, widths[0] - 4)
+
     if night:
         to_night(img, d, (54, 13), seed=7)
     return img
 
 
+STAGES = range(5)   # 0 foundations ... 4 finished
+
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "."
-    etemenanki().save(f"{out}/etemenanki.png")
-    hanging_gardens().save(f"{out}/gardens.png")
-    etemenanki(night=True).save(f"{out}/etemenanki_night.png")
-    hanging_gardens(night=True).save(f"{out}/gardens_night.png")
+    for night in (False, True):
+        tod = "night" if night else "day"
+        for stage in STAGES:
+            etemenanki(night, stage).save(f"{out}/etemenanki_{tod}_{stage}.png")
+            hanging_gardens(night, stage).save(f"{out}/gardens_{tod}_{stage}.png")
