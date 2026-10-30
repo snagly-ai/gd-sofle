@@ -80,6 +80,22 @@ BEHAVIOR_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL,
 
 static uint8_t resends_left;
 
+/* The colour commands run on their own small task, not ZMK's main one. If the
+ * link to the right half is backed up, sending a command can wait for space;
+ * on its own task that wait can never hold up keypresses. */
+#define PC_SCENE_STACK_SIZE 1536
+K_THREAD_STACK_DEFINE(pc_scene_stack, PC_SCENE_STACK_SIZE);
+static struct k_work_q pc_scene_q;
+static atomic_t pc_scene_q_started = ATOMIC_INIT(0);
+
+static void pc_scene_schedule(struct k_work_delayable *work, k_timeout_t delay) {
+    if (atomic_cas(&pc_scene_q_started, 0, 1)) {
+        k_work_queue_start(&pc_scene_q, pc_scene_stack, K_THREAD_STACK_SIZEOF(pc_scene_stack),
+                           K_LOWEST_APPLICATION_THREAD_PRIO, NULL);
+    }
+    k_work_reschedule_for_queue(&pc_scene_q, work, delay);
+}
+
 static void send_work_handler(struct k_work *work);
 static K_WORK_DELAYABLE_DEFINE(send_work, send_work_handler);
 
@@ -106,18 +122,18 @@ static void send_work_handler(struct k_work *work) {
      * setting up its side of the link the first time. */
     if (resends_left > 0) {
         resends_left--;
-        k_work_reschedule(&send_work, K_MSEC(RESYNC_DELAY_MS));
+        pc_scene_schedule(&send_work, K_MSEC(RESYNC_DELAY_MS));
     }
 }
 
 static void schedule_resync(void) {
     resends_left = 1;
-    k_work_reschedule(&send_work, K_MSEC(RESYNC_DELAY_MS));
+    pc_scene_schedule(&send_work, K_MSEC(RESYNC_DELAY_MS));
 }
 
 static int pc_scene_listener(const zmk_event_t *eh) {
     if (as_zmk_ble_active_profile_changed(eh) != NULL) {
-        k_work_reschedule(&send_work, K_MSEC(10));
+        pc_scene_schedule(&send_work, K_MSEC(10));
     }
     return ZMK_EV_EVENT_BUBBLE;
 }

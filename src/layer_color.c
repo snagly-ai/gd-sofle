@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
 
 #include <zmk/behavior.h>
@@ -70,6 +71,23 @@ static const struct layer_color layer_colors[] = {DT_INST_FOREACH_CHILD(0, LAYER
 
 static const struct layer_color *last_applied;
 static uint16_t last_hue;
+static int16_t last_effect = -1;
+
+/* The colour commands run on their own small task, not ZMK's main one. If the
+ * link to the right half is backed up, sending a command can wait for space;
+ * on its own task that wait can never hold up keypresses. */
+#define LAYER_COLOR_STACK_SIZE 1536
+K_THREAD_STACK_DEFINE(layer_color_stack, LAYER_COLOR_STACK_SIZE);
+static struct k_work_q layer_color_q;
+static atomic_t layer_color_q_started = ATOMIC_INIT(0);
+
+static void layer_color_schedule(struct k_work_delayable *work, k_timeout_t delay) {
+    if (atomic_cas(&layer_color_q_started, 0, 1)) {
+        k_work_queue_start(&layer_color_q, layer_color_stack, K_THREAD_STACK_SIZEOF(layer_color_stack),
+                           K_LOWEST_APPLICATION_THREAD_PRIO, NULL);
+    }
+    k_work_reschedule_for_queue(&layer_color_q, work, delay);
+}
 static bool force_apply;
 static uint8_t resync_left;
 
@@ -136,7 +154,12 @@ static void apply_work_handler(struct k_work *work) {
     if (color != NULL && (color != last_applied || hue != last_hue || force_apply)) {
         uint8_t brt = color->brt >= 0 ? (uint8_t)color->brt : zmk_rgb_underglow_calc_brt(0).b;
 
-        send_rgb_command(RGB_EFS_CMD, color->effect);
+        /* Only send what changed: the effect rarely does, so usually this is
+         * one command per colour change instead of two. */
+        if (color->effect != last_effect || force_apply) {
+            send_rgb_command(RGB_EFS_CMD, color->effect);
+            last_effect = color->effect;
+        }
         send_rgb_command(RGB_COLOR_HSB_CMD, RGB_COLOR_HSB_VAL(hue, color->sat, brt));
 
         last_applied = color;
@@ -150,19 +173,19 @@ static void apply_work_handler(struct k_work *work) {
     if (resync_left > 0) {
         resync_left--;
         force_apply = true;
-        k_work_reschedule(&apply_work, K_MSEC(CONFIG_ZMK_LAYER_COLOR_RESYNC_DELAY_MS));
+        layer_color_schedule(&apply_work, K_MSEC(CONFIG_ZMK_LAYER_COLOR_RESYNC_DELAY_MS));
     }
 }
 
 static void schedule_resync(void) {
     force_apply = true;
     resync_left = 1;
-    k_work_reschedule(&apply_work, K_MSEC(CONFIG_ZMK_LAYER_COLOR_RESYNC_DELAY_MS));
+    layer_color_schedule(&apply_work, K_MSEC(CONFIG_ZMK_LAYER_COLOR_RESYNC_DELAY_MS));
 }
 
 static int layer_color_listener(const zmk_event_t *eh) {
     /* Layer changes, and switching PC (Bluetooth profile), both recolour. */
-    k_work_reschedule(&apply_work, K_MSEC(CONFIG_ZMK_LAYER_COLOR_DEBOUNCE_MS));
+    layer_color_schedule(&apply_work, K_MSEC(CONFIG_ZMK_LAYER_COLOR_DEBOUNCE_MS));
     return ZMK_EV_EVENT_BUBBLE;
 }
 
